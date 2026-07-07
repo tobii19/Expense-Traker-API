@@ -1,14 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from models.auth import User
-from schemas.user_auth import UserLogin, UserResponse, CreateUser
+from schemas.user_auth import UserResponse, CreateUser
 from database import get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from auth.hashing import hashed_password, verify_password
 from auth.jwt_handler import create_access_token
 from auth.oauth import get_current_user
-from models.auth import User
-
 
 router = APIRouter(
     prefix="/auth",
@@ -27,8 +25,7 @@ def get_me(current_user: User = Depends(get_current_user)):
 def register(user: CreateUser, db: Session = Depends(get_db)):
 
     exists = db.query(User).filter(
-        User.email == user.email
-    ).first()
+        User.email == user.email).first()
 
     if exists:
         raise HTTPException(
@@ -45,8 +42,8 @@ def register(user: CreateUser, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-
     return new_user
+
 
 @router.post("/login")
 def login(
@@ -83,3 +80,4 @@ def login(
         "access_token": token,
         "token_type": "bearer"
     }
+    
