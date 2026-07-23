@@ -1,6 +1,5 @@
 from datetime import date
-from pydantic import BaseModel
-
+from pydantic import BaseModel,ConfigDict
 
 class TransactionCreate(BaseModel):
     amount: float
@@ -9,9 +8,9 @@ class TransactionCreate(BaseModel):
     type: str
     category_id: int
 
-
 class TransactionResponse(TransactionCreate):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True) 
+    
+    

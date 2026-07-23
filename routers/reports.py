@@ -1,45 +1,9 @@
-'''from sqlalchemy import func
-from database import get_db
-from models.transaction import Transaction
-from sqlalchemy.orm import Session
-from fastapi import FastAPI,Depends,APIRouter
-
-router = APIRouter(
-    prefix="/report",
-    tags=["Report"]
-)
-
-@router.get("/monthly")
-def monthly_report(month : int,year : int, db : Session = Depends(get_db)):
-    income = db.query(func.sum(Transaction.amount)).filter(
-        Transaction.type == "income",
-        func.extract("month",Transaction.date) == month,
-        func.extract("year",Transaction.date) == year
-    ).scalar() or 0
-        
-    expense = db.query(func.sum(Transaction.amount)).filter(
-        Transaction.type == "expense",
-        func.extract("month",Transaction.date) == month,
-        func.extract("year",Transaction.date) == year
-    ).scalar() or 0
-    
-    return {
-        "month": month,
-        "year": year,
-        "income": income,
-        "expense": expense,
-        "balance": income - expense,
-    }
-    
-    
-'''
-
 from database import get_db
 from sqlalchemy.orm import Session
-from fastapi import APIRouter,Depends,HTTPException
+from fastapi import APIRouter,Depends
 from models.transaction import Transaction
 from sqlalchemy import func,asc,desc
-from models.categories import Category
+
 router = APIRouter(
     prefix="/report",
     tags=["Report"]

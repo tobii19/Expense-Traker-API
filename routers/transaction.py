@@ -7,6 +7,9 @@ from models.categories import Category
 from schemas.transaction import TransactionCreate,TransactionResponse
 from datetime import date
 from schemas.transaction_filter import TransactionFilter
+from sqlalchemy import asc,desc
+from auth.oauth import get_current_user
+from models.auth import User
 
 router = APIRouter(
     tags = ["Transaction"]
@@ -34,18 +37,19 @@ def create_transaction(tran : TransactionCreate,db : Session = Depends(get_db)):
     return new_transaction
 
 @router.get("/transaction/",response_model=List[TransactionResponse])
-def get_transaction(db : Session = Depends(get_db)):
+def get_transaction(db : Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     return db.query(Transaction).all()
 
-@router.get("/{id}")
-def get_transaction_id(id : int,db : Session =Depends(get_db)):
+@router.get("/transaction/{id}", response_model=TransactionResponse)
+def get_transaction_id(
+    id: int,
+    db: Session = Depends(get_db)
+):
     tran = db.query(Transaction).filter(Transaction.id == id).first()
-    
+
     if not tran:
-        return {
-            "Transaction" : "Transaction id not found"
-        }
-        
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
     return tran
 
 @router.put("/transaction/{id}",response_model=TransactionResponse)
@@ -70,7 +74,6 @@ def update_transaction(id : int,updatetran :TransactionCreate,db : Session = Dep
     
     return tran
     
-    
 @router.delete("/transaction/{id}")
 def delete_transaction(id : int, db : Session = Depends(get_db)):
     tran = db.query(Transaction).filter(Transaction.id == id).first()
@@ -84,31 +87,49 @@ def delete_transaction(id : int, db : Session = Depends(get_db)):
     return {
         "Transaction" : "Delete Transaction"
     }
-     
+   
 @router.get("/tsort/", response_model=List[TransactionResponse])
-def sort_transactions(tsort : TransactionFilter,
+def filter_sort_transactions(
+    type: str | None = None,
+    category_id: int | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    sort_by: str | None = None,
+    order: str = "asc",
     db: Session = Depends(get_db)
 ):
     query = db.query(Transaction)
 
-    if tsort.type:
-        query = query.filter(Transaction.type == tsort.type)
+    if type:
+        query = query.filter(Transaction.type == type)
 
-    if tsort.category_id:
-        query = query.filter(Transaction.category_id == tsort.category_id)
+    if category_id:
+        query = query.filter(Transaction.category_id == category_id)
 
-    if tsort.min_amount is not None:
-        query = query.filter(Transaction.amount >= tsort.min_amount)
+    if min_amount is not None:
+        query = query.filter(Transaction.amount >= min_amount)
 
-    if tsort.max_amount is not None:
-        query = query.filter(Transaction.amount <= tsort.max_amount)
+    if max_amount is not None:
+        query = query.filter(Transaction.amount <= max_amount)
 
-    if tsort.start_date:
-        query = query.filter(Transaction.date >= tsort.start_date)
+    if start_date:
+        query = query.filter(Transaction.date >= start_date)
 
-    if tsort.end_date:
-        query = query.filter(Transaction.date <= tsort.end_date)
+    if end_date:
+        query = query.filter(Transaction.date <= end_date)
+
+    if sort_by == "amount":
+        if order == "desc":
+            query = query.order_by(desc(Transaction.amount))
+        else:
+            query = query.order_by(asc(Transaction.amount))
+
+    elif sort_by == "date":
+        if order == "desc":
+            query = query.order_by(desc(Transaction.date))
+        else:
+            query = query.order_by(asc(Transaction.date))
 
     return query.all()
-    
-    
